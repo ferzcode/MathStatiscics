@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.stats import kstwobign, uniform
+import scipy.stats as stats
 from scipy.special import kolmogorov
 
 # Заданные данные
@@ -25,7 +25,7 @@ plt.figure(figsize=(10, 6))
 plt.step(x, y, where='post', label='Empirical CDF')
 
 # Теоретическая функция распределения для равномерного распределения
-plt.plot(x, uniform.cdf(x), label='Theoretical CDF (Uniform)', linestyle='--')
+plt.plot(x, stats.uniform.cdf(x), label='Theoretical CDF (Uniform)', linestyle='--')
 
 plt.xlabel('Value')
 plt.ylabel('ECDF')
@@ -40,10 +40,10 @@ def kolmogorov_test(data):
     x, y = ecdf(data)
 
     # Максимальное положительное отклонение между ECDF и теоретической CDF
-    d_plus = np.max(y - uniform.cdf(x))
+    d_plus = np.max(y - stats.uniform.cdf(x))
 
     # Максимальное отрицательное отклонение между ECDF и теоретической CDF
-    d_minus = np.max(uniform.cdf(x) - (y - 1 / n))
+    d_minus = np.max(stats.uniform.cdf(x) - (y - 1 / n))
     # Максимальное отклонение
     d = max(d_plus, d_minus)
     return d
@@ -57,7 +57,7 @@ lambda_stat = np.sqrt(n) * d_statistic
 
 # Вычисление критического значения для уровня значимости α = 0.15
 alpha = 0.15
-critical_value = kstwobign.ppf(1 - alpha)
+critical_value = stats.kstwobign.ppf(1 - alpha)
 
 # Вычисление p-value с использованием распределения Колмогорова
 p_value_kolm = 1 - kolmogorov(lambda_stat)
@@ -73,3 +73,23 @@ if d_statistic > critical_value / np.sqrt(n):
     print("Отвергаем нулевую гипотезу о равномерности распределения (d_statistic > critical_value)")
 else:
     print("Нет оснований отвергнуть нулевую гипотезу о равномерности распределения (d_statistic <= critical_value)")
+
+def kolmogorov_cdf(x):
+    if x < 0:
+        return 0.0
+    elif x == 0:
+        return 1.0
+    else:
+        sum = 0.0
+        k = 1
+        while True:
+            term = (-1) ** (k - 1) * np.exp(-2 * (k * x) ** 2)
+            sum += term
+            if abs(term) < 1e-10:  # точность
+                break
+            k += 1
+        return 1 - 2 * sum
+
+x = 0.54954
+kolmogorov_value = kolmogorov_cdf(x)
+print("Real Level: ", kolmogorov_value)
